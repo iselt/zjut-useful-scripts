@@ -1,0 +1,77 @@
+#!/bin/bash
+# 图书馆研讨室预约脚本
+
+base_url="http://172.16.30.83"
+url_login="$base_url/ClientWeb/pro/ajax/login.aspx"
+url_rev="$base_url/ClientWeb/pro/ajax/reserve.aspx"
+
+main_card_id="202200000000"
+pwd=$main_card_id
+
+# 设置预约参数
+start_time="0800"
+end_time="1000"
+#book_date="2023-06-22"
+
+dev_id="100589730"
+lab_id="100589726"
+kind_id="100589768"
+min_user="6"
+max_user="9"
+test_name="项目对接"
+mab_list="202200000000,202200000001,202200000002,202200000003,202200000004,202200000005,202200000006"
+
+# 如果没有指定日期，则默认为两天后
+if [[ -z "$book_date" ]]; then
+  book_date=$(date -d "+48 hours" "+%Y-%m-%d")
+fi
+start="$book_date+${start_time:0:2}:${start_time:2:4}"
+end="$book_date+${end_time:0:2}:${end_time:2:4}"
+
+# 获取当前时间的Unix时间戳
+timestamp=$(date +%s)
+echo "当前时间的Unix时间戳为：$timestamp"
+
+rev_params="dialogid=&dev_id=$dev_id&lab_id=$lab_id&kind_id=$kind_id&room_id=&type=dev&prop=&test_id=&term=&test_name=$test_name&min_user=$min_user&max_user=$max_user&mb_list=$mab_list&start=$start&end=$end&start_time=$start_time&end_time=$end_time&up_file=&memo=&act=set_resv&_=$(($timestamp + 1))"
+
+# 构造完整的URL
+url_rev="${url_rev}?${rev_params}"
+
+# 设置登录参数
+login_params="act=login&id=$main_card_id&pwd=$pwd&_=timestamp"
+
+# 发送登录请求
+curl -s "$url_login?$login_params" -c cookies.txt | jq -r
+
+# 从响应中提取cookies
+cookies="ASP.NET_SessionId=$(grep NET_SessionId cookies.txt | awk '{ print $7 }')"
+
+# 发送预约请求
+curl -s "$url_rev" -b "$cookies" | jq -r
+
+# 删除cookies文件
+rm cookies.txt
+
+# lab_id
+# 100589726为朝晖校区
+# 100589399为屏峰校区
+#
+# kind_id
+# 朝晖3-5 100589714
+# 朝晖6-9 100589768
+# 屏峰3-10 100590563
+# 屏峰10-20 100589942
+#
+# dev_id
+# 朝晖
+# 研讨室1 100589730
+# 研讨室2 100589734
+# 研讨室3 100589745
+# 研讨室4 100589749
+# 研讨室5 100589753
+#
+# 屏峰
+# 研讨室201 100589419
+# 研讨室二 100589411
+# 研讨室三 100589407
+# 研讨室四 100589403
