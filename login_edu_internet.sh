@@ -37,7 +37,6 @@ elif echo "${test_curl}" | grep -q "192.168.210.112"; then \
   -d 'user=' \
   -d 'cmd=' \
   -d 'Login='
-  gateway=10.129.0.1
 # 屏峰校区宿舍楼内的移动宽带的认证请求
 elif echo "${test_curl}" | grep -q "192.168.210.111"; then \
   curl "http://192.168.210.111:801/eportal/?c=ACSetting&a=Login&\
@@ -59,12 +58,17 @@ elif echo "${test_curl}" | grep -q "192.168.210.111"; then \
   -d 'user=' \
   -d 'cmd=' \
   -d 'Login='
-  gateway=10.136.0.1
 fi
 
 # 针对路由器，用于设置路由表以方便访问学校内网
 # 需要将路由器 DNS 设置为 172.16.7.10 和 172.16.7.30 以获取正确的内网服务器 ip
-if [ `whoami` = "admin" ]; then
+if `ip route | grep -q 10.129.0.1`; then
+  gateway=10.129.0.1
+elif `ip route | grep -1 10.136.0.1`; then
+  gateway=10.136.0.1
+fi
+
+if whoami | grep -q "admin\|root" && [ -n "$gateway" ]; then
   route add -net 192.168.210.111 netmask 255.255.255.255 gw ${gateway}
   route add -net 192.168.210.112 netmask 255.255.255.255 gw ${gateway}
   route add -net 192.168.210.100 netmask 255.255.255.255 gw ${gateway}
